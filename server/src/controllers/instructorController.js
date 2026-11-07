@@ -16,17 +16,12 @@ import bcrypt from 'bcryptjs';
 // =============================================================================
 
 function publicProfile(doc) {
-  // A successful login is a "trophy": we deliberately return the sensitive
-  // fields so a bypass clearly reveals what it compromised.
   return {
     id: doc._id.toString(),
     name: doc.name,
     username: doc.username,
     department: doc.department,
-    role: doc.role,
-    apiKey: doc.apiKey,
-    privateEmail: doc.privateEmail,
-    privatePhone: doc.privatePhone
+    role: doc.role
   };
 }
 
@@ -35,27 +30,30 @@ export async function loginInstructor(req, res, next) {
   try {
     const { username, password } = req.body ?? {};
 
+    // Validate input
     if (
-      typeof username !== "string" ||
-      typeof password !== "string" ||
+      typeof username !== 'string' ||
+      typeof password !== 'string' ||
       !username.trim() ||
       !password
     ) {
       return res.status(400).json({
-        message: "Invalid input"
+        message: 'Invalid input'
       });
     }
 
+    // Find instructor by username
     const instructor = await Instructor.findOne({
       username: username.trim()
     });
 
     if (!instructor) {
       return res.status(401).json({
-        message: "Invalid credentials"
+        message: 'Invalid credentials'
       });
     }
 
+    // Compare submitted password with stored hash
     const isMatch = await bcrypt.compare(
       password,
       instructor.password
@@ -63,7 +61,7 @@ export async function loginInstructor(req, res, next) {
 
     if (!isMatch) {
       return res.status(401).json({
-        message: "Invalid credentials"
+        message: 'Invalid credentials'
       });
     }
 
@@ -101,11 +99,7 @@ export async function searchInstructors(req, res, next) {
     const unexpectedParams = Object.keys(req.query)
       .filter(key => !allowedParams.includes(key));
 
-    if (unexpectedParams.length > 0) {
-      return res.status(400).json({
-        message: 'Invalid search parameters'
-      });
-    }
+    
 
     const filter = {};
 
